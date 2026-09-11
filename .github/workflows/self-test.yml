@@ -17,9 +17,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   self-test:
@@ -39,4 +41,13 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Self-test (positive checks + negative controls)
+        env:
+          # Ensure eats its own dog food: a grading regression that reaches
+          # main (or a deliberate manual run) files itself as an issue, the
+          # same path checks against a real app use. Not on pull_request —
+          # there the failed check is already the signal and an issue would
+          # be noise. Empty string is falsy in the runner's check, so no
+          # token means no filing.
+          GITHUB_TOKEN: ${{ github.event_name != 'pull_request' && secrets.GITHUB_TOKEN || '' }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: npm run self-test
