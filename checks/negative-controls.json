@@ -1,0 +1,79 @@
+{
+  "READ_THIS_FIRST": "These are intentionally mismatched checks, not real regressions. Each entry's `expect` field says what SHOULD happen and its `expectDetail` pins WHY — a control that fails for a different reason than documented is now itself a surprise (non-zero exit), not something you have to notice by eye. Do not 'fix' these to make them pass — that defeats their purpose. See README.md.",
+  "checks": [
+    {
+      "id": "neg-agree-mismatch",
+      "note": "Compares the real version tag (demo1) against #stale-stamp, which is deliberately left at demo0 — two readable values that disagree.",
+      "kind": "agree",
+      "expect": "fail",
+      "expectDetail": { "reason": "mismatch" },
+      "sources": [
+        { "label": "index-script-tag", "read": { "type": "attr", "selector": "script#main-script", "attr": "src", "extractParam": "v" } },
+        { "label": "stale-stamp-text", "read": { "type": "text", "selector": "#stale-stamp" } }
+      ]
+    },
+    {
+      "id": "neg-agree-unreadable",
+      "note": "Both selectors are absent, so both read as null. Nulls are not agreement: grading these 'pass' is how a checks file whose selectors rotted reports green on a page it never inspected.",
+      "kind": "agree",
+      "expect": "fail",
+      "expectDetail": { "reason": "unreadable" },
+      "sources": [
+        { "label": "missing-a", "read": { "type": "text", "selector": "#this-selector-does-not-exist" } },
+        { "label": "missing-b", "read": { "type": "text", "selector": "#this-one-does-not-either" } }
+      ]
+    },
+    {
+      "id": "neg-global-missing",
+      "note": "Checks for a global that was never set — must report 'missing', not silently pass.",
+      "kind": "globalExists",
+      "expect": "fail",
+      "expectDetail": { "reason": "missing" },
+      "path": "thisGlobalDoesNotExist"
+    },
+    {
+      "id": "neg-global-wrong-type",
+      "note": "window.state is a real object, but this check asserts it should be a string — must report 'wrong-type'.",
+      "kind": "globalExists",
+      "expect": "fail",
+      "expectDetail": { "reason": "wrong-type" },
+      "path": "state",
+      "expectType": "string"
+    },
+    {
+      "id": "neg-global-null",
+      "note": "window.nullState exists but is null, and typeof null === 'object'. A naive typeof comparison accepts it as an object — the global is there in name only, which is the failure this kind exists to catch.",
+      "kind": "globalExists",
+      "expect": "fail",
+      "expectDetail": { "reason": "null" },
+      "path": "nullState",
+      "expectType": "object"
+    },
+    {
+      "id": "neg-hash-mismatch",
+      "note": "Compares live app.js against a deliberately different local file — must report a hash mismatch.",
+      "kind": "assetHash",
+      "expect": "fail",
+      "expectDetail": { "reason": "hash-mismatch" },
+      "liveUrl": "app.js",
+      "repoFile": "demo/app-different.js"
+    },
+    {
+      "id": "neg-parses-fail",
+      "note": "broken.js is deliberately invalid JS, fetchable but never loaded by index.html — must report a SyntaxError as neither classic nor module.",
+      "kind": "parses",
+      "expect": "fail",
+      "expectDetail": { "reason": "syntax-error", "as": "neither" },
+      "liveUrl": "broken.js"
+    },
+    {
+      "id": "neg-parses-module-as-classic",
+      "note": "module.js is valid module syntax and invalid classic syntax. Pinned to scriptType 'classic', it must fail — that's what proves scriptType is actually enforced and not quietly falling back to 'auto'.",
+      "kind": "parses",
+      "expect": "fail",
+      "expectDetail": { "reason": "syntax-error", "as": "classic" },
+      "liveUrl": "module.js",
+      "scriptType": "classic"
+    }
+  ]
+}

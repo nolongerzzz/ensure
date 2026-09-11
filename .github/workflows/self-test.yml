@@ -1,0 +1,42 @@
+name: self-test
+
+# Tests Ensure against its own demo. A failure here means src/ensure-grade.js
+# or src/checks-browser.js regressed, not that any real app broke.
+#
+# Both demo.json (all real, all expected to pass) and negative-controls.json
+# (all deliberately mismatched, all expected to fail for a stated reason)
+# should produce ZERO surprises. If negative-controls.json ever passes
+# cleanly instead of producing its expected failures, grading has gone too
+# permissive — that's exactly what these exist to catch.
+#
+# npm run self-test starts and stops the demo server itself (replay/
+# demo-server.js, no external server package), so there is no backgrounded
+# process to leak between steps.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Self-test (positive checks + negative controls)
+        run: npm run self-test

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Ensure demo</title>
+</head>
+<body>
+  <div id="adjust-status">loading...</div>
+  <!-- Fixture for a negative control: a stamp deliberately left at an older
+       version than the script tag's ?v=, so the `agree` kind has a real
+       two-readable-values mismatch to catch, not just a missing selector. -->
+  <div id="stale-stamp">demo0</div>
+  <script id="main-script" src="app.js?v=demo1"></script>
+</body>
+</html>

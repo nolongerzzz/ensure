@@ -1,0 +1,37 @@
+{
+  "checks": [
+    {
+      "id": "hud-version-agree",
+      "kind": "agree",
+      "sources": [
+        { "label": "index-script-tag", "read": { "type": "attr", "selector": "script#main-script", "attr": "src", "extractParam": "v" } },
+        { "label": "hud-stamp-text", "read": { "type": "text", "selector": "#adjust-status" } }
+      ]
+    },
+    {
+      "id": "global-state-exists",
+      "kind": "globalExists",
+      "path": "state",
+      "expectType": "object"
+    },
+    {
+      "id": "app-js-hash-matches-repo",
+      "kind": "assetHash",
+      "liveUrl": "app.js",
+      "repoFile": "demo/app.js"
+    },
+    {
+      "id": "app-js-parses",
+      "kind": "parses",
+      "liveUrl": "app.js",
+      "scriptType": "classic"
+    },
+    {
+      "id": "module-js-parses",
+      "note": "A valid ES module must not read as a syntax error. Classic-script-only parsing rejects `export` with a message indistinguishable from a truncated file, which would make every module asset a permanent false red.",
+      "kind": "parses",
+      "liveUrl": "module.js",
+      "scriptType": "module"
+    }
+  ]
+}

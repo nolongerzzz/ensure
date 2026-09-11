@@ -1,0 +1,61 @@
+name: ensure-checks
+
+# Runs the real checks against nest-optimizer's live Pages deploy. Needs a
+# checkout of nest-optimizer itself (not just Ensure) because assetHash
+# checks compare live-served bytes against the committed source.
+
+on:
+  # Scheduling is off until checks/nest-optimizer.json's selectors have been
+  # verified against the real page. This job files GitHub issues on a
+  # surprise, and an unverified draft's wrong guess files an issue that looks
+  # exactly like a real regression. Re-enable the cron once the selectors in
+  # that file are confirmed.
+  # schedule:
+  #   - cron: '0 * * * *'   # hourly; adjust once you know how often deploys happen
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  ensure-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Ensure
+        uses: actions/checkout@v5
+        with:
+          path: ensure
+
+      - name: Check out nest-optimizer
+        uses: actions/checkout@v5
+        with:
+          repository: nolongerzzz/nest-optimizer
+          path: nest-optimizer
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ensure/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ensure
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: ensure
+        run: npx playwright install --with-deps chromium
+
+      # checks/nest-optimizer.json is an UNVERIFIED DRAFT: its selectors were
+      # written from a memory log, not from reading the real index.html. Do
+      # not treat a red run here as a regression in nest-optimizer until the
+      # selectors themselves have been confirmed against that page.
+      - name: Run checks against live Pages
+        working-directory: ensure
+        env:
+          APP_URL: https://nolongerzzz.github.io/nest-optimizer/
+          REPO_CHECKOUT_DIR: ../nest-optimizer
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node replay/ensure-run.js checks/nest-optimizer.json

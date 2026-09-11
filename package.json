@@ -1,0 +1,15 @@
+{
+  "name": "ensure",
+  "version": "0.1.0",
+  "description": "Deploy-integrity checker: catches stale caches, version-tag drift, missing globals, and truncated file writes, with GitHub issue auto-filing on regression.",
+  "type": "module",
+  "main": "src/ensure-grade.js",
+  "scripts": {
+    "demo": "node replay/demo-server.js",
+    "self-test": "node replay/self-test.js",
+    "check": "node replay/ensure-run.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "READ_THIS_FIRST": "DRAFT — written from the project memory log, not from reading nest-optimizer's actual markup. #adjust-status is confirmed real (the memory log explicitly names it as part of the HUD-match rule). The script-tag matcher ('app' / 'app-cth') and the app-cth.js path are best guesses from the same log. Verify all three against the real index.html before trusting a red result here — a wrong selector reports 'missing' or a hash mismatch that means 'my guess was wrong', not 'the app broke'.",
+  "checks": [
+    {
+      "id": "hud-version-tag-agree",
+      "note": "The locked rule: stampHud()'s output, the main script's ?v= tag, and #adjust-status must all agree. This only checks the ?v= tag vs #adjust-status — add stampHud()'s own source location as a third source once its DOM home (if any) is confirmed.",
+      "kind": "agree",
+      "sources": [
+        { "label": "app-script-version-tag", "read": { "type": "scriptSrcContaining", "match": "app", "extractParam": "v" } },
+        { "label": "hud-status-text", "read": { "type": "text", "selector": "#adjust-status" } }
+      ]
+    },
+    {
+      "id": "window-state-exists",
+      "note": "cth5's real bug was exactly this missing — a module script couldn't see window.state.",
+      "kind": "globalExists",
+      "path": "state",
+      "expectType": "object"
+    },
+    {
+      "id": "app-cth-hash-matches-repo",
+      "note": "Catches stale-Pages-cache serving an old app-cth.js despite a merged, deployed commit — the mask6 cache-bust bug class.",
+      "kind": "assetHash",
+      "liveUrl": "app-cth.js",
+      "repoFile": "app-cth.js"
+    },
+    {
+      "id": "app-cth-parses",
+      "kind": "parses",
+      "liveUrl": "app-cth.js"
+    }
+  ]
+}
