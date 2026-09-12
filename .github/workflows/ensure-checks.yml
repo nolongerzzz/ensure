@@ -5,11 +5,11 @@ name: ensure-checks
 # checks compare live-served bytes against the committed source.
 
 on:
-  # Scheduling is off until checks/nest-optimizer.json's selectors have been
-  # verified against the real page. This job files GitHub issues on a
-  # surprise, and an unverified draft's wrong guess files an issue that looks
-  # exactly like a real regression. Re-enable the cron once the selectors in
-  # that file are confirmed.
+  # checks/nest-optimizer.json's selectors are now verified against the real
+  # index.html, so the original reason for holding the cron back is gone.
+  # Scheduling is still deliberately left off: this job files GitHub issues on
+  # a surprise, so turn it on only once you've watched a few manual runs and
+  # know how often nest-optimizer actually deploys. Uncomment to enable.
   # schedule:
   #   - cron: '0 * * * *'   # hourly; adjust once you know how often deploys happen
   workflow_dispatch: {}
@@ -47,10 +47,9 @@ jobs:
         working-directory: ensure
         run: npx playwright install --with-deps chromium
 
-      # checks/nest-optimizer.json is an UNVERIFIED DRAFT: its selectors were
-      # written from a memory log, not from reading the real index.html. Do
-      # not treat a red run here as a regression in nest-optimizer until the
-      # selectors themselves have been confirmed against that page.
+      # checks/nest-optimizer.json's selectors were confirmed against the real
+      # index.html and exercised in a real browser, so a red run here should be
+      # read as a genuine signal about the deploy rather than a bad guess.
       - name: Run checks against live Pages
         working-directory: ensure
         env:

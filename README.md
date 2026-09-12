@@ -36,8 +36,8 @@ All four are graded by exactly one function each, in `src/ensure-grade.js`
 ```json
 { "id": "hud-version-tag-agree", "kind": "agree",
   "sources": [
-    { "label": "a", "read": { "type": "scriptSrcContaining", "match": "app", "extractParam": "v" } },
-    { "label": "b", "read": { "type": "text", "selector": "#adjust-status" } }
+    { "label": "a", "read": { "type": "scriptSrcContaining", "match": "app-ux.js", "extractParam": "v" } },
+    { "label": "b", "read": { "type": "text", "selector": "#adjust-status", "extractPattern": "^HUD\\s+(\\S+)" } }
   ] }
 
 { "id": "window-state-exists", "kind": "globalExists", "path": "state", "expectType": "object" }
@@ -63,7 +63,19 @@ the ability to tell the failure modes apart.
 `read.type` options: `text` (selector's textContent), `attr` (an attribute,
 optionally extracting a `?param=` from it), `scriptSrcContaining` (find the
 first `<script src>` containing a substring — for when you don't control the
-target's markup and can't assume an id exists).
+target's markup and can't assume an id exists). A `scriptSrcContaining`
+matcher that hits more than one script logs how many it matched and which
+one it used; narrow it, because grading the wrong script is indistinguishable
+from a real failure.
+
+Any read also accepts an optional `extractPattern` (plus `patternFlags`), a
+regex applied to whatever the read produced — capture group 1 if there is
+one, else the whole match. Use it when the value you need is embedded in a
+longer line: nest-optimizer's `#adjust-status` reads `HUD inside3`, which can
+never compare equal to the script tag's `inside3` without narrowing it. A
+pattern that stops matching reads as `null` (graded `unreadable`) rather than
+falling back to the raw text — a stamp that changed shape is a real signal,
+not something to paper over.
 
 `parses` accepts `"scriptType"`: `"auto"` (default — accepts classic *or*
 ES module syntax), `"classic"`, or `"module"`. Pin it when a file's kind is
@@ -140,17 +152,29 @@ exactly why it's supposed to fail, and an `expectDetail` pinning the reason
 so "failed, but for the wrong reason" is caught too. If one starts passing
 instead, that's the thing to investigate — not something to delete.
 
-## `checks/nest-optimizer.json` is a draft, not verified
+## `checks/nest-optimizer.json` is verified
 
-It's built from facts confirmed in the project memory log (`#adjust-status`
-is named explicitly in a locked rule; the `cth5` bug is exactly the
-`window.state` scope mismatch this tool is designed to catch), but the
-script-tag matcher and `app-cth.js`'s exact path are best guesses, not
-confirmed against the real `index.html`. Verify selectors before trusting
-a red result from this file — a wrong guess reports the same "fail" a real
-regression would. `.github/workflows/ensure-checks.yml` is `workflow_dispatch`
-only for that reason: its schedule stays commented out until the selectors
-are confirmed, because that job files issues.
+Every selector in it was confirmed against nest-optimizer's real
+`index.html` at `main` (the commit Pages has deployed) and exercised in a
+real Chromium, not inferred from the project memory log. Three of the
+draft's guesses were wrong and are worth remembering, because they're the
+shape of mistake this file invites:
+
+- **The version-tag matcher was ambiguous.** `"match": "app"` hits 10 of the
+  13 script tags and silently grades the first one. The canonical `?v=` tag
+  belongs to `app-ux.js` specifically, because that's where `stampHud()`
+  lives. `app.js` isn't loaded by `index.html` at all.
+- **There are two independent version streams.** The main bundle is on
+  `inside3`; `app-cth.js` and `app-cth-expose.js` are on `cth8`. Comparing
+  across them is a guaranteed false red, so they get separate `agree` checks.
+- **The HUD text isn't a bare version.** `#adjust-status` reads
+  `HUD inside3`, so an exact-equality `agree` against the tag's `inside3`
+  can never pass. That's what the `extractPattern` read option is for.
+
+`.github/workflows/ensure-checks.yml` is still `workflow_dispatch` only. The
+selectors are no longer the reason — that job files GitHub issues, so the
+schedule stays commented out until a few manual runs have shown what
+nest-optimizer's deploy cadence actually is.
 
 ## Known limitations
 

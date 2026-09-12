@@ -1,33 +1,66 @@
 {
-  "READ_THIS_FIRST": "DRAFT — written from the project memory log, not from reading nest-optimizer's actual markup. #adjust-status is confirmed real (the memory log explicitly names it as part of the HUD-match rule). The script-tag matcher ('app' / 'app-cth') and the app-cth.js path are best guesses from the same log. Verify all three against the real index.html before trusting a red result here — a wrong selector reports 'missing' or a hash mismatch that means 'my guess was wrong', not 'the app broke'.",
+  "VERIFIED": "Every selector below was confirmed on 2026-09-12 against nest-optimizer's real index.html at main (a8dd06b, the commit GitHub Pages has deployed), and exercised in a real Chromium against a byte-identical local serve of that tree with three.js fetched from npm so the page boots exactly as it does live. No entry here is a guess from the memory log.",
   "checks": [
     {
       "id": "hud-version-tag-agree",
-      "note": "The locked rule: stampHud()'s output, the main script's ?v= tag, and #adjust-status must all agree. This only checks the ?v= tag vs #adjust-status — add stampHud()'s own source location as a third source once its DOM home (if any) is confirmed.",
+      "note": "The locked rule: stampHud()'s output, the version-tag script's ?v=, and #adjust-status must all agree. stampHud() lives in app-ux.js, which is the ONE script carrying the canonical 'inside3' tag — NOT app.js (index.html does not load app.js at all) and NOT app-cth.js (that is on a separate 'cth8' version stream, see cth-version-tag-agree). stampHud() writes both #adjust-status directly and #status via setStatus(), so source 3 is stampHud()'s own output — the third source the draft asked for. The HUD line reads 'HUD inside3', not a bare 'inside3', hence extractPattern; app-mask.js appends ' — N faces excluded' to that same line, which the pattern tolerates.",
       "kind": "agree",
       "sources": [
-        { "label": "app-script-version-tag", "read": { "type": "scriptSrcContaining", "match": "app", "extractParam": "v" } },
-        { "label": "hud-status-text", "read": { "type": "text", "selector": "#adjust-status" } }
+        { "label": "app-ux-script-version-tag", "read": { "type": "scriptSrcContaining", "match": "app-ux.js", "extractParam": "v" } },
+        { "label": "hud-status-text", "read": { "type": "text", "selector": "#adjust-status", "extractPattern": "^HUD\\s+(\\S+)" } },
+        { "label": "stamphud-setstatus-text", "read": { "type": "text", "selector": "#status", "extractPattern": "^HUD\\s+(\\S+)" } }
+      ]
+    },
+    {
+      "id": "cth-version-tag-agree",
+      "note": "The CTH pair is versioned independently of the main bundle (cth8 vs inside3) and must move together: app-cth-expose.js is the classic bridge that publishes window.state for the app-cth.js module, so a stale expose next to a fresh module is exactly the cth5 scope bug. Both matchers are unique — 'app-cth.js' does not substring-match 'app-cth-expose.js'.",
+      "kind": "agree",
+      "sources": [
+        { "label": "app-cth-expose-version-tag", "read": { "type": "scriptSrcContaining", "match": "app-cth-expose.js", "extractParam": "v" } },
+        { "label": "app-cth-version-tag", "read": { "type": "scriptSrcContaining", "match": "app-cth.js", "extractParam": "v" } }
       ]
     },
     {
       "id": "window-state-exists",
-      "note": "cth5's real bug was exactly this missing — a module script couldn't see window.state.",
+      "note": "cth5's real bug was exactly this missing — a module script couldn't see window.state. app-core.js declares `const state`, which creates a global lexical binding and NOT a window property; app-cth-expose.js is what assigns window.state. It does so unconditionally on load (not gated on ?cth=1) and on its first line, before it touches THREE — confirmed by observing window.state still present in a run where the three.js CDN was blocked and that same file threw on the next line. So this holds on the plain URL the workflow checks, with no query string.",
       "kind": "globalExists",
       "path": "state",
       "expectType": "object"
     },
     {
       "id": "app-cth-hash-matches-repo",
-      "note": "Catches stale-Pages-cache serving an old app-cth.js despite a merged, deployed commit — the mask6 cache-bust bug class.",
+      "note": "Catches stale-Pages-cache serving an old app-cth.js despite a merged, deployed commit — the mask6 cache-bust bug class. Confirmed at the repo root, as the wiring plan specified.",
       "kind": "assetHash",
       "liveUrl": "app-cth.js",
       "repoFile": "app-cth.js"
     },
     {
       "id": "app-cth-parses",
+      "note": "Loaded as <script type=\"module\">, so it is pinned to module rather than left on 'auto'. It happens to also parse as classic today (its only imports are dynamic import() calls), which means 'auto' would silently grade it as classic and stop noticing if it ever gained real module syntax.",
       "kind": "parses",
-      "liveUrl": "app-cth.js"
+      "liveUrl": "app-cth.js",
+      "scriptType": "module"
+    },
+    {
+      "id": "app-cth-expose-hash-matches-repo",
+      "note": "Load-bearing for the cth5 module/classic scope fix and only three lines long, so a truncated or stale copy is both easy to miss and immediately fatal to window.state. Also at the repo root.",
+      "kind": "assetHash",
+      "liveUrl": "app-cth-expose.js",
+      "repoFile": "app-cth-expose.js"
+    },
+    {
+      "id": "app-cth-expose-parses",
+      "note": "Pinned classic: it is loaded as a plain <script> precisely so its assignments land in window, and it would stop doing its job as a module.",
+      "kind": "parses",
+      "liveUrl": "app-cth-expose.js",
+      "scriptType": "classic"
+    },
+    {
+      "id": "app-ux-hash-matches-repo",
+      "note": "app-ux.js carries stampHud() and the canonical ?v= tag that hud-version-tag-agree reads, so a stale live copy of it would make that rule agree on the wrong value.",
+      "kind": "assetHash",
+      "liveUrl": "app-ux.js",
+      "repoFile": "app-ux.js"
     }
   ]
 }
