@@ -35,6 +35,30 @@
     return params.get(param);
   }
 
+  // Pulls the meaningful part out of an already-read value with a regex, for
+  // pages whose stamp is embedded in a longer line rather than being the whole
+  // text. nest-optimizer's #adjust-status reads 'HUD inside3', while the
+  // script tag it must agree with yields 'inside3' — without this the two can
+  // never compare equal and the rule is simply inexpressible.
+  //
+  // Returns capture group 1 when the pattern has one, else the whole match.
+  // A pattern that no longer matches returns null, which grades as unreadable
+  // rather than silently falling back to the raw string: a stamp whose format
+  // changed is a real signal, not something to paper over. An invalid pattern
+  // throws, because that's a bug in the checks file, not in the page.
+  function applyPattern(value, pattern, flags) {
+    var re;
+    try {
+      re = new RegExp(pattern, flags || '');
+    } catch (err) {
+      throw new Error('invalid extractPattern ' + JSON.stringify(pattern) + ': ' + err.message);
+    }
+    if (value == null) return null;
+    var m = re.exec(String(value));
+    if (!m) return null;
+    return m.length > 1 && m[1] !== undefined ? m[1] : m[0];
+  }
+
   // Finds the first <script src="..."> whose src contains `match`, without
   // needing to know an id ahead of time — useful when you don't control the
   // target page's markup and can't assume selectors exist.
@@ -84,6 +108,7 @@
     getText,
     getAttr,
     extractParam,
+    applyPattern,
     getGlobalInfo,
     fetchBytes,
     getScriptSrcContaining,

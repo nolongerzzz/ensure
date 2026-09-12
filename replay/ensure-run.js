@@ -59,9 +59,22 @@ if (!config || !Array.isArray(config.checks) || config.checks.length === 0) {
   process.exit(2);
 }
 
+// Optional regex narrowing applied to whatever a read produced. Runs in the
+// page so the checks file has exactly one regex dialect to reason about
+// (the browser's), rather than Node's for some read types and the page's for
+// others.
+async function applyReadPattern(page, value, read) {
+  if (!read.extractPattern) return value;
+  return page.evaluate(
+    ({ v, pattern, flags }) => window.__ENSURE_READ__.applyPattern(v, pattern, flags),
+    { v: value, pattern: read.extractPattern, flags: read.patternFlags }
+  );
+}
+
 async function readSignal(page, read) {
   if (read.type === 'text') {
-    return page.evaluate((sel) => window.__ENSURE_READ__.getText(sel), read.selector);
+    const raw = await page.evaluate((sel) => window.__ENSURE_READ__.getText(sel), read.selector);
+    return applyReadPattern(page, raw, read);
   }
   if (read.type === 'scriptSrcContaining') {
     const raw = await page.evaluate((m) => window.__ENSURE_READ__.getScriptSrcContaining(m), read.match);
@@ -71,26 +84,26 @@ async function readSignal(page, read) {
     if (matchCount > 1) {
       console.log(`     note: ${matchCount} script srcs contain "${read.match}"; using the first (${raw}). Narrow the matcher if that's not the one you meant.`);
     }
-    if (read.extractParam) {
-      return page.evaluate(
-        ({ raw, param }) => window.__ENSURE_READ__.extractParam(raw, param),
-        { raw, param: read.extractParam }
-      );
-    }
-    return raw;
+    const value = read.extractParam
+      ? await page.evaluate(
+          ({ r, param }) => window.__ENSURE_READ__.extractParam(r, param),
+          { r: raw, param: read.extractParam }
+        )
+      : raw;
+    return applyReadPattern(page, value, read);
   }
   if (read.type === 'attr') {
     const raw = await page.evaluate(
       ({ sel, attr }) => window.__ENSURE_READ__.getAttr(sel, attr),
       { sel: read.selector, attr: read.attr }
     );
-    if (read.extractParam) {
-      return page.evaluate(
-        ({ raw, param }) => window.__ENSURE_READ__.extractParam(raw, param),
-        { raw, param: read.extractParam }
-      );
-    }
-    return raw;
+    const value = read.extractParam
+      ? await page.evaluate(
+          ({ r, param }) => window.__ENSURE_READ__.extractParam(r, param),
+          { r: raw, param: read.extractParam }
+        )
+      : raw;
+    return applyReadPattern(page, value, read);
   }
   throw new Error(`Unknown read type: ${read.type}`);
 }

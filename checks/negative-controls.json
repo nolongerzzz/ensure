@@ -24,6 +24,17 @@
       ]
     },
     {
+      "id": "neg-agree-pattern-no-match",
+      "note": "An extractPattern that stops matching must read as null (graded 'unreadable'), never silently fall back to the raw text. #stale-stamp reads 'demo0', which this HUD-shaped pattern cannot match. A pattern that quietly no-ops is how a checks file keeps reporting green after the stamp it watches changed shape.",
+      "kind": "agree",
+      "expect": "fail",
+      "expectDetail": { "reason": "unreadable" },
+      "sources": [
+        { "label": "index-script-tag", "read": { "type": "attr", "selector": "script#main-script", "attr": "src", "extractParam": "v" } },
+        { "label": "pattern-misses", "read": { "type": "text", "selector": "#stale-stamp", "extractPattern": "^HUD\\s+(\\S+)$" } }
+      ]
+    },
+    {
       "id": "neg-global-missing",
       "note": "Checks for a global that was never set — must report 'missing', not silently pass.",
       "kind": "globalExists",

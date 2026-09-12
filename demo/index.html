@@ -10,6 +10,11 @@
        version than the script tag's ?v=, so the `agree` kind has a real
        two-readable-values mismatch to catch, not just a missing selector. -->
   <div id="stale-stamp">demo0</div>
+  <!-- Fixture for the extractPattern read option: a stamp that embeds the
+       version in a longer line, the way nest-optimizer's #adjust-status reads
+       'HUD inside3' rather than a bare 'inside3'. Without a way to narrow the
+       read, such a stamp can never compare equal to the script tag's ?v=. -->
+  <div id="prefixed-stamp">HUD demo1 - 2 faces excluded</div>
   <script id="main-script" src="app.js?v=demo1"></script>
 </body>
 </html>

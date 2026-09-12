@@ -9,6 +9,15 @@
       ]
     },
     {
+      "id": "prefixed-stamp-agree",
+      "note": "Positive control for the extractPattern read option: #prefixed-stamp embeds the version in a longer line, so it only agrees with the script tag's ?v= if the pattern actually narrows the read. Trailing text after the version is tolerated on purpose — nest-optimizer appends a running count to that same line.",
+      "kind": "agree",
+      "sources": [
+        { "label": "index-script-tag", "read": { "type": "attr", "selector": "script#main-script", "attr": "src", "extractParam": "v" } },
+        { "label": "prefixed-stamp-text", "read": { "type": "text", "selector": "#prefixed-stamp", "extractPattern": "^HUD\\s+(\\S+)" } }
+      ]
+    },
+    {
       "id": "global-state-exists",
       "kind": "globalExists",
       "path": "state",
