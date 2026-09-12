@@ -25,11 +25,11 @@
     },
     {
       "id": "neg-global-missing",
-      "note": "Checks for a global that was never set — must report 'missing', not silently pass.",
+      "note": "TEMPORARY BREAKAGE — DO NOT MERGE. Path deliberately pointed at window.state, which exists, so this control passes when it declares expect: fail. Exercises the real GitHub issue-filing path end to end; reverted immediately after.",
       "kind": "globalExists",
       "expect": "fail",
       "expectDetail": { "reason": "missing" },
-      "path": "thisGlobalDoesNotExist"
+      "path": "state"
     },
     {
       "id": "neg-global-wrong-type",
